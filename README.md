@@ -8,6 +8,8 @@ modifications:
 * A new training/inference config, `configs/sawsinsub_talknet.yaml` has been
   added for a model that can synthesize audio from
   ControllableTalkNet-compatible spectrograms.
+* A checkpoint for a model trained from Twilight Sparkle's singing data has
+  been included under exp/ts-full.
 
 # DDSP Singing Vocoders
 Authors: [Da-Yi Wu](https://github.com/ericwudayi)\*, [Wen-Yi Hsiao](https://github.com/wayne391)\*, [Fu-Rong Yang](https://github.com/furongyang)\*, [Oscar Friedman](https://github.com/OscarFree), Warren Jackson, Scott Bruzenak, Yi-Wen Liu, [Yi-Hsuan Yang](https://github.com/affige)
