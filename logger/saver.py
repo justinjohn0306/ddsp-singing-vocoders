@@ -26,7 +26,9 @@ class Saver(object):
             initial_global_step=-1):
 
         self.expdir = args.env.expdir
-        exists_ok = True if self.expdir == 'test' else False
+        # exists_ok = True if self.expdir == 'test' else False
+        # Couldn't get this to work without hacking this
+        exists_ok = True
 
         # cold start
         self.global_step = initial_global_step
