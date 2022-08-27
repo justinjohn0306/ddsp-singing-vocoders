@@ -1,3 +1,14 @@
+This is a fork of the DDSP Singing Vocoders repo with the following
+modifications:
+* preprocess.py has been altered to generate spectrograms compatible with
+  SortAnon's ControllableTalkNet.
+* solver.py has been altered (hacky) to start off an existing checkpoint if
+  available to allow inference to be started and stopped on the same machine
+  (i.e. for local training).
+* A new training/inference config, `configs/sawsinsub_talknet.yaml` has been
+  added for a model that can synthesize audio from
+  ControllableTalkNet-compatible spectrograms.
+
 # DDSP Singing Vocoders
 Authors: [Da-Yi Wu](https://github.com/ericwudayi)\*, [Wen-Yi Hsiao](https://github.com/wayne391)\*, [Fu-Rong Yang](https://github.com/furongyang)\*, [Oscar Friedman](https://github.com/OscarFree), Warren Jackson, Scott Bruzenak, Yi-Wen Liu, [Yi-Hsuan Yang](https://github.com/affige)
  
