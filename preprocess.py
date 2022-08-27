@@ -92,13 +92,15 @@ class Audio2Mel(torch.nn.Module):
             hop_length=self.hop_length,
             win_length=self.win_length,
             window=self.window,
-            center=False,
+            # center=False,
+            center=True, # TalkNet
             return_complex=False,
         )
         real_part, imag_part = fft.unbind(-1)
         magnitude = torch.sqrt(real_part ** 2 + imag_part ** 2)
         mel_output = torch.matmul(self.mel_basis, magnitude)
-        log_mel_spec = torch.log10(torch.clamp(mel_output, min=1e-5))
+        # log_mel_spec = torch.log10(torch.clamp(mel_output, min=1e-5))
+        log_mel_spec = torch.log(torch.clamp(mel_output, min=1e-5)) # Talknet
 
         # log_mel_spec: B x C, M, T
         T_ = log_mel_spec.shape[-1]
@@ -118,6 +120,7 @@ def process_mel(
         hop_length,
         win_length,
         n_mel_channels,
+        mel_fmax, # TalkNet requires different fmax
         src_ext,
         dst_ext):
 
@@ -134,7 +137,8 @@ def process_mel(
         hop_length=hop_length,
         sampling_rate=sampling_rate,
         n_mel_channels=n_mel_channels,
-        win_length=win_length).to(device)
+        win_length=win_length,
+        mel_fmax=mel_fmax).to(device)
 
     # run
     n_file = len(filelist)
@@ -172,19 +176,23 @@ if __name__ == '__main__':
     path_rootdir = './data'
     device = 'cuda'
 
-    sampling_rate  = 24000
-    hop_length     = 240
+    #sampling_rate  = 24000
+    sampling_rate  = 22050 # TalkNet
+    #hop_length     = 240
+    hop_length     = 256 # TalkNet
     win_length     = 1024
     n_mel_channels = 80
+    mel_fmax       = 8000 # TalkNet
 
     src_ext = 'wav'
     dst_ext = 'npy'
 
     # ========================== #
     # run
-    for v in ['m1', 'f1']:
-        for s in ['train-full', 'train-3min', 'val', 'test']:
-            print(f'=== {v} - {s} =============')
+    # MODIFY HERE
+    for v in ['ts']:
+        for s in ['train-full', 'train-val', 'test']:
+    #for v in ['to_mel']:
             path_srcdir  = os.path.join(path_rootdir, v, s, 'audio')
             path_dstdir  = os.path.join(path_rootdir, v, s, 'mel')
             process_mel(
@@ -195,6 +203,7 @@ if __name__ == '__main__':
                 hop_length,
                 win_length,
                 n_mel_channels,
+                mel_fmax,
                 src_ext,
                 dst_ext)
     
