@@ -1,0 +1,27 @@
+data:
+  block_size: 256
+  duration: 2
+  sampling_rate: 22050
+  # ts full
+  train_path: /mnt/d/Code/ddsp-singing-vocoders/data/ts/train-full
+  valid_path: /mnt/d/Code/ddsp-singing-vocoders/data/ts/train-val
+model:
+  n_mag_harmonic: 256
+  n_mag_noise: 80
+  n_harmonics: 150
+loss:
+  n_ffts: [1024, 512, 256, 128]
+device: cuda
+env:
+  expdir: exp/ts-full/sawsinsub-256
+  gpu: 0
+  gpu_id: 0
+inference:
+  batch_size: 16
+train:
+  batch_size: 46
+  epochs: 100000
+  interval_log: 10
+  interval_save: 500
+  interval_val: 500
+  lr: 0.002

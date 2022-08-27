@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import shutil
+import regex as re
 import numpy as np
 import soundfile as sf
 
@@ -156,6 +157,25 @@ def test(args, model, loss_func, loader_test, path_gendir='gen', is_part=False):
     print(' Real Time Factor', np.mean(rtf_all))
     return test_loss, test_loss_mss, test_loss_f0
 
+def warmstart_model(args, saver, model):
+    if os.path.exists(saver.expdir) is None: return
+    if os.path.exists(os.path.join(saver.expdir, "ckpts")) is None: return
+    print("Checkpoints exist, trying warmstart")
+
+    max_time = 0
+    max_ckpt_name = ""
+    for root, _, files in os.walk(os.path.join(saver.expdir, "ckpts")):
+        for name in files:
+            if name.startswith("vocoder_") and name.endswith("params.pt"):
+                if int(os.path.getctime(
+                    os.path.join(saver.expdir, "ckpts", name)
+                    )) >= max_time: max_ckpt_name = name
+                
+    if len(max_ckpt_name) != 0:
+        print("Using warmstart checkpoint "+max_ckpt_name)
+        utils.load_model_params(os.path.join(saver.expdir, "ckpts",
+            max_ckpt_name), model, args.device)
+    return model
 
 def train(args, model, loss_func, loader_train, loader_test):
     # saver
@@ -169,6 +189,9 @@ def train(args, model, loss_func, loader_train, loader_test):
     # optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.train.lr)
 
+    # warmstart if available
+    model = warmstart_model(args, saver, model)
+
     # run
     best_loss = np.inf
     num_batches = len(loader_train)
@@ -176,6 +199,9 @@ def train(args, model, loss_func, loader_train, loader_test):
     prev_save_time = -1
     saver.log_info('======= start training =======')
     for epoch in range(args.train.epochs):
+        saver.log_info("epoch "+str(epoch))
+        #saver.log_info("global step "+str(saver.global_step))
+
         for batch_idx, data in enumerate(loader_train):
             saver.global_step_increment()
             optimizer.zero_grad()
