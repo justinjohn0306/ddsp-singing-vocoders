@@ -3,13 +3,29 @@ modifications:
 * preprocess.py has been altered to generate spectrograms compatible with
   SortAnon's ControllableTalkNet.
 * solver.py has been altered (hacky) to start off an existing checkpoint if
-  available to allow inference to be started and stopped on the same machine
+  available to allow training to be started and stopped on the same machine
   (i.e. for local training).
 * A new training/inference config, `configs/sawsinsub_talknet.yaml` has been
   added for a model that can synthesize audio from
   ControllableTalkNet-compatible spectrograms.
 * A checkpoint for a model trained from Twilight Sparkle's singing data has
   been included under exp/ts-full.
+
+# Usage with ControllableTalkNet
+1. Generate spectrograms using my [ControllableTalkNet
+   fork.](https://github.com/effusiveperiscope/ControllableTalkNet)
+2. Create a folder for containing spectrograms for inference: `mkdir
+   talknet_infer`. Move/copy spectrograms to that folder.
+3. Create an output folder: `mkdir talknet_out`
+4. Run inference:
+```
+python main.py --config ./configs/sawsinsub_talknet.yaml \
+		--stage inference \
+		--model SawSinSub \
+		--input_dir  ./talknet_infer \
+        --output_dir ./talknet_out \
+		--model_ckpt ./exp/ts-full/sawsinsub-256/ckpts/vocoder_best_params.pt
+```
 
 # DDSP Singing Vocoders
 Authors: [Da-Yi Wu](https://github.com/ericwudayi)\*, [Wen-Yi Hsiao](https://github.com/wayne391)\*, [Fu-Rong Yang](https://github.com/furongyang)\*, [Oscar Friedman](https://github.com/OscarFree), Warren Jackson, Scott Bruzenak, Yi-Wen Liu, [Yi-Hsuan Yang](https://github.com/affige)
