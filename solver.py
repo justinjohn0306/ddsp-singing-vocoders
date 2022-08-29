@@ -5,14 +5,19 @@ import shutil
 import regex as re
 import numpy as np
 import soundfile as sf
+import parselmouth
 
 import torch
 
 from logger.saver import Saver
 from logger import utils
 
+def apodize(values, minidx, maxidx, length):
+    values[minidx-length:minidx] *= np.linspace(1.0,0.0,length)
+    values[minidx:maxidx] = 0.0
+    values[maxidx:maxidx+length] *= np.linspace(0.0,1.0,length)
 
-def render(args, model, path_mel_dir, path_gendir='gen', is_part=False):
+def render(args, model, path_mel_dir, path_gendir='gen', is_part=False, debuzz=False):
     print(' [*] rendering...')
     model.eval()
 
@@ -54,9 +59,56 @@ def render(args, model, path_mel_dir, path_gendir='gen', is_part=False):
 
             # to numpy
             pred = utils.convert_tensor_to_numpy(signal)
-            if is_part:
-                pred_n = utils.convert_tensor_to_numpy(s_n)
-                pred_h = utils.convert_tensor_to_numpy(s_h)
+            pred_n = utils.convert_tensor_to_numpy(s_n)
+            pred_h = utils.convert_tensor_to_numpy(s_h)
+
+            if debuzz:
+                # load wave
+                wave_pred = parselmouth.Sound(pred.astype(np.float64),
+                    sampling_frequency=args.data.sampling_rate)
+                wave_noise = parselmouth.Sound(pred_n.astype(np.float64),
+                    sampling_frequency=args.data.sampling_rate)
+                wave_harmonic = parselmouth.Sound(pred_h.astype(np.float64),
+                    sampling_frequency=args.data.sampling_rate)
+
+                # extract UV
+                pitch = wave_pred.to_pitch_ac(
+                    args.debuzz.pitch_time_step, 
+                    args.debuzz.pitch_floor,
+                    args.debuzz.max_candidates,
+                    args.debuzz.very_accurate,
+                    args.debuzz.silence_thresh,
+                    args.debuzz.voicing_thresh,
+                    args.debuzz.octave_cost,
+                    args.debuzz.oct_jump_cost,
+                    args.debuzz.vuv_cost,
+                    args.debuzz.pitch_ceiling)
+                pitch_values = pitch.selected_array['frequency']
+                pitch_values[pitch_values==0] = np.nan
+                UV_Indices = np.argwhere(np.isnan(pitch_values)).flatten()
+
+                # apply UV on harmonic parts
+                step = int(args.debuzz.pitch_time_step/2 *
+                        wave_harmonic.sampling_frequency) + 1
+                for index in UV_Indices:
+                    # upsample f0 to sample level
+                    h_index = (np.abs(wave_harmonic.xs() -
+                        pitch.xs()[index])).argmin() 
+                    apodize(wave_harmonic.values[0], h_index-step,
+                        h_index+step, length=args.debuzz.fade_length)
+
+                # the first and last 0.25 seconds don't have pitch detection,
+                # so mute these?
+
+                # this is VERY evident in the final audio
+
+                # trim = int(wave_harmonic.sampling_frequency * 0.25)+1
+                # wave_harmonic.values[0][:trim] = 0
+                # wave_harmonic.values[0][-trim:] = 0
+                
+                # combine two parts
+                wave_final = wave_harmonic.values + wave_noise.values
+                pred = np.squeeze(wave_final)
             
             # save
             sf.write(path_pred, pred, args.data.sampling_rate)
@@ -198,8 +250,9 @@ def train(args, model, loss_func, loader_train, loader_test):
     model.train()
     prev_save_time = -1
     saver.log_info('======= start training =======')
-    for epoch in range(args.train.epochs):
-        saver.log_info("epoch "+str(epoch))
+    #for epoch in range(args.train.epochs):
+    for epoch in range(5):
+        # saver.log_info("epoch "+str(epoch))
         #saver.log_info("global step "+str(saver.global_step))
 
         for batch_idx, data in enumerate(loader_train):

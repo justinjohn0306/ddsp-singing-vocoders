@@ -6,6 +6,7 @@ email:  s101062219@gmail.com
 import os
 import argparse
 import torch
+from torch.profiler import profile, record_function, ProfilerActivity
 
 from logger import utils, report
 from data_cnpop import get_data_loaders
@@ -67,6 +68,12 @@ def parse_args(args=None, namespace=None):
         required=False,
         help="[inference, validation] individual harmonic and noise output",
     )
+    parser.add_argument(
+        "-b",
+        "--debuzz",
+        required=False,
+        help="[inference, validation] debuzz output",
+        action="store_true")
     return parser.parse_args(args=args, namespace=namespace)
 
 
@@ -140,7 +147,11 @@ if __name__ == '__main__':
 
     # stage
     if cmd.stage == 'training':
-        train(args, model, loss_func, loader_train, loader_valid)
+        with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
+            with record_function("ddsp_training"):
+                train(args, model, loss_func, loader_train, loader_valid)
+        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
     elif cmd.stage == 'validation':
         output_dir = 'valid_gen'
         if cmd.output_dir:
@@ -161,7 +172,8 @@ if __name__ == '__main__':
             model, 
             path_mel_dir=cmd.input_dir, 
             path_gendir=output_dir,
-            is_part=cmd.is_part)
+            is_part=cmd.is_part,
+            debuzz=cmd.debuzz)
     else:
           raise ValueError(f" [x] Unkown Stage: {cmd.stage }")
     
