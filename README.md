@@ -10,6 +10,7 @@ modifications:
   ControllableTalkNet-compatible spectrograms.
 * A checkpoint for a model trained from Twilight Sparkle's singing data has
   been included under exp/ts-full.
+* Debuzzing has been added as a command line parameter.
 
 # Usage with ControllableTalkNet
 1. Generate spectrograms using my [ControllableTalkNet
