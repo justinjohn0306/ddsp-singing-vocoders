@@ -62,8 +62,8 @@ def get_data_loaders(args, whole_audio=False):
         data_train ,
         batch_size=args.train.batch_size if not whole_audio else 1,
         shuffle=False,
-        num_workers=2,
-        pin_memory=True
+        num_workers=8,
+        pin_memory=False
     )
     data_valid = AudioDataset(
         args.data.valid_path,
@@ -104,15 +104,22 @@ class AudioDataset(Dataset):
             is_ext=False
         )
         self.whole_audio = whole_audio
+        self.cached_durations = {}
+        self.cached_data = {}
 
     def __getitem__(self, file_idx):
         name = self.paths[file_idx]
 
-        # check duration. if too short, then skip
-        duration = librosa.get_duration(
-            filename=os.path.join(self.path_root, 'audio', name) + '.wav', 
-            sr=self.sample_rate)
+        if not (name in self.cached_durations):
+            # check duration. if too short, then skip
+            duration = librosa.get_duration(
+                filename=os.path.join(self.path_root, 'audio', name) + '.wav', 
+                sr=self.sample_rate)
             
+            self.cached_durations[name] = duration
+        else:
+            duration = self.cached_durations[name]
+
         if duration < (self.waveform_sec + 0.1):
             return self.__getitem__(file_idx+1)
         
@@ -120,6 +127,12 @@ class AudioDataset(Dataset):
         return self.get_data(name, duration)
 
     def get_data(self, name, duration):
+
+        if (name in self.cached_data):
+            return self.cached_data[name]
+
+        #print(name)
+
         # path
         path_audio = os.path.join(self.path_root, 'audio', name) + '.wav'
         path_mel   = os.path.join(self.path_root, 'mel', name) + '.npy'
@@ -163,7 +176,9 @@ class AudioDataset(Dataset):
         audio = torch.from_numpy(audio).float()
         assert sr == self.sample_rate
 
-        return dict(audio=audio, f0=f0_hz, mel=audio_mel, name=name)
+        self.cached_data[name] = dict(
+            audio=audio, f0=f0_hz, mel=audio_mel, name=name)
+        return self.cached_data[name]
 
     def __len__(self):
         return len(self.paths)
