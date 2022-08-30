@@ -147,11 +147,7 @@ if __name__ == '__main__':
 
     # stage
     if cmd.stage == 'training':
-        with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
-            with record_function("ddsp_training"):
-                train(args, model, loss_func, loader_train, loader_valid)
-        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
-        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+        train(args, model, loss_func, loader_train, loader_valid)
     elif cmd.stage == 'validation':
         output_dir = 'valid_gen'
         if cmd.output_dir:
