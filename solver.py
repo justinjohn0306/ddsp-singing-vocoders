@@ -4,6 +4,7 @@ import time
 import shutil
 import regex as re
 import numpy as np
+from scipy import signal
 import soundfile as sf
 import parselmouth
 
@@ -16,6 +17,19 @@ def apodize(values, minidx, maxidx, length):
     values[minidx-length:minidx] *= np.linspace(1.0,0.0,length)
     values[minidx:maxidx] = 0.0
     values[maxidx:maxidx+length] *= np.linspace(0.0,1.0,length)
+
+def apodize2(values, minidx, maxidx, length, sr):
+    sos = signal.butter(N=5, Wn=2000, fs=sr, output='sos')
+    filtered_range = signal.sosfiltfilt(sos,
+        values[minidx-length:maxidx+length])
+    filtered_range[0:length] *= np.linspace(0.0,1.0,length)
+    filtered_range[-length:] *= np.linspace(1.0,0.0,length)
+
+    values[minidx-length:minidx] *= np.linspace(1.0,0.0,length)
+    values[minidx:maxidx] = 0.0
+    values[maxidx:maxidx+length] *= np.linspace(0.0,1.0,length)
+
+    values[minidx-length:maxidx+length] += filtered_range
 
 def render(args, model, path_mel_dir, path_gendir='gen', is_part=False, debuzz=False):
     print(' [*] rendering...')
@@ -94,8 +108,11 @@ def render(args, model, path_mel_dir, path_gendir='gen', is_part=False, debuzz=F
                     # upsample f0 to sample level
                     h_index = (np.abs(wave_harmonic.xs() -
                         pitch.xs()[index])).argmin() 
-                    apodize(wave_harmonic.values[0], h_index-step,
-                        h_index+step, length=args.debuzz.fade_length)
+                    #apodize(wave_harmonic.values[0], h_index-step,
+                        #h_index+step, length=args.debuzz.fade_length)
+                    apodize2(wave_harmonic.values[0], h_index-step,
+                        h_index+step, length=args.debuzz.fade_length,
+                        sr=wave_harmonic.sampling_frequency)
 
                 # the first and last 0.25 seconds don't have pitch detection,
                 # so mute these?
