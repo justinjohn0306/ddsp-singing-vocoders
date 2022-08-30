@@ -250,10 +250,7 @@ def train(args, model, loss_func, loader_train, loader_test):
     model.train()
     prev_save_time = -1
     saver.log_info('======= start training =======')
-    #for epoch in range(args.train.epochs):
-    for epoch in range(5):
-        # saver.log_info("epoch "+str(epoch))
-        #saver.log_info("global step "+str(saver.global_step))
+    for epoch in range(args.train.epochs):
 
         for batch_idx, data in enumerate(loader_train):
             saver.global_step_increment()
@@ -316,7 +313,7 @@ def train(args, model, loss_func, loader_train, loader_test):
             
             # validation
             # if saver.global_step % args.train.interval_val == 0:
-            cur_hour = saver.get_total_time(to_str=False) // 3600
+            cur_hour = saver.get_total_time(to_str=False) // 1800
             if cur_hour != prev_save_time:
                 # save latest
                 saver.save_models(
