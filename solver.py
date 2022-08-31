@@ -233,22 +233,18 @@ def warmstart_model(args, saver, model):
 
     max_time = 0
     max_ckpt_name = ""
+    max_ckpt_num = 0
+
     for root, _, files in os.walk(os.path.join(saver.expdir, "ckpts")):
         for name in files:
-            if (name.startswith("vocoder_") and name.endswith("params.pt") and
-            name != "vocoder_best_params.pt"):
-                ctime = int(os.path.getctime(os.path.join(saver.expdir,
-                    "ckpts", name)))
-                if ctime >= max_time:
-                    max_time = ctime
-                    max_ckpt_name = name
+            match = re.match('vocoder_(\d+)_\d+\.\d+_best_params.pt', name)
+            if match:
+                max_ckpt_num = int(match.group(1))
+                max_ckpt_name = name
 
-    max_ckpt_num = 0
                 
     if len(max_ckpt_name) != 0:
         print("Using warmstart checkpoint "+max_ckpt_name)
-        max_ckpt_num = int(re.match('vocoder_(\d+)_\d+\.\d+\_params.pt',
-            max_ckpt_name).group(1))
         utils.load_model_params(os.path.join(saver.expdir, "ckpts",
             max_ckpt_name), model, args.device)
 
@@ -372,7 +368,8 @@ def train(args, model, loss_func, loader_train, loader_test):
                 if test_loss < best_loss:
                     saver.log_info(' [V] best model updated.')
                     saver.save_models(
-                        {'vocoder': model}, postfix='best')
+                        {'vocoder': model}, postfix=
+                        f'{saver.global_step}_{cur_hour}_best')
                     # That's a pretty big mistake to make
                     # test_loss = best_loss
                     best_loss = test_loss
