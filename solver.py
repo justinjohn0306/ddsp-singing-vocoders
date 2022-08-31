@@ -252,6 +252,7 @@ def warmstart_model(args, saver, model):
     return model, max_ckpt_num
 
 # initiate off the latest best model
+# i.e. in case of altering learning rate
 def warmstart_model2(args, saver, model):
     if os.path.exists(saver.expdir) is None: return
     if os.path.exists(os.path.join(saver.expdir, "ckpts")) is None: return
