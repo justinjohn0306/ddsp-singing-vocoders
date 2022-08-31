@@ -226,7 +226,33 @@ def test(args, model, loss_func, loader_test, path_gendir='gen', is_part=False):
     print(' Real Time Factor', np.mean(rtf_all))
     return test_loss, test_loss_mss, test_loss_f0
 
+
+# initiate off the latest model
+# monotonicity can now be guaranteed
 def warmstart_model(args, saver, model):
+    if os.path.exists(saver.expdir) is None: return
+    if os.path.exists(os.path.join(saver.expdir, "ckpts")) is None: return
+    print("Checkpoints exist, trying warmstart")
+
+    max_ckpt_name = ""
+    max_ckpt_num = 0
+
+    for root, _, files in os.walk(os.path.join(saver.expdir, "ckpts")):
+       for name in files:
+            match = re.match('vocoder_(\d+)_\d+\.\d+_(?:best_)?params.pt',
+                name)
+            if int(match.group(1)) > max_ckpt_num
+                max_ckpt_num = int(match.group(1))
+                max_ckpt_name = name
+    if len(max_ckpt_name) != 0:
+        print("Using latest warmstart checkpoint "+max_ckpt_name)
+        utils.load_model_params(os.path.join(saver.expdir, "ckpts",
+            max_ckpt_name), model, args.device)
+
+    return model, max_ckpt_num
+
+# initiate off the latest best model
+def warmstart_model2(args, saver, model):
     if os.path.exists(saver.expdir) is None: return
     if os.path.exists(os.path.join(saver.expdir, "ckpts")) is None: return
     print("Checkpoints exist, trying warmstart")
@@ -238,13 +264,13 @@ def warmstart_model(args, saver, model):
     for root, _, files in os.walk(os.path.join(saver.expdir, "ckpts")):
         for name in files:
             match = re.match('vocoder_(\d+)_\d+\.\d+_best_params.pt', name)
-            if match:
+            if int(match.group(1)) > max_ckpt_num:
                 max_ckpt_num = int(match.group(1))
                 max_ckpt_name = name
 
                 
     if len(max_ckpt_name) != 0:
-        print("Using warmstart checkpoint "+max_ckpt_name)
+        print("Using latest best warmstart checkpoint "+max_ckpt_name)
         utils.load_model_params(os.path.join(saver.expdir, "ckpts",
             max_ckpt_name), model, args.device)
 
