@@ -3,8 +3,10 @@ data:
   duration: 2
   sampling_rate: 22050
   # ts full
-  train_path: /mnt/d/Code/ddsp-singing-vocoders/data/ts/train-full
-  valid_path: /mnt/d/Code/ddsp-singing-vocoders/data/ts/train-val
+  # train_path: /mnt/d/Code/ddsp-singing-vocoders/data/ts/train-full
+  # valid_path: /mnt/d/Code/ddsp-singing-vocoders/data/ts/train-val
+  train_path: /mnt/d/Code/ddsp-singing-vocoders/data/pre1/train-full
+  valid_path: /mnt/d/Code/ddsp-singing-vocoders/data/pre1/train-val
 model:
   n_mag_harmonic: 256
   n_mag_noise: 80
@@ -13,15 +15,29 @@ loss:
   n_ffts: [1024, 512, 256, 128]
 device: cuda
 env:
-  expdir: exp/ts-full/sawsinsub-256
+# expdir: exp/ts-full/sawsinsub-256
+  expdir: exp/pre1-full/sawsinsub-256
   gpu: 0
   gpu_id: 0
 inference:
   batch_size: 16
 train:
-  batch_size: 46
+  batch_size: 45
   epochs: 100000
   interval_log: 10
   interval_save: 500
   interval_val: 500
   lr: 0.002
+debuzz:
+  pitch_time_step: 0.005
+  pitch_floor: 60
+  max_candidates: 15
+  very_accurate: False
+  silence_thresh: 0.03
+  voicing_thresh: 0.9 # Higher is fewer unvoiced intervals
+  octave_cost: 0.01
+  oct_jump_cost: 0.35
+  vuv_cost: 0.14
+  pitch_ceiling: 600.0
+  max_period: 0.02
+  fade_length: 100
