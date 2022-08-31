@@ -122,7 +122,7 @@ class F0L1Loss(nn.Module):
             loss = F.l1_loss(torch.log(f0_hz_true+1e-3), torch.log(f0_predict+1e-3), reduction='sum')
             loss = loss / torch.sum(f0_hz_true>=50)
         else:
-            loss = F.l1_loss(torch.log(f0_hz_true+1e-3), torch.log(f0_predict+1e-3), reduction='mean')
+            loss = F.l1_loss(torch.log(f0_hz_true+1e-3), torch.log(f0_predict+1e-3), reduction='mean')*250
         return torch.sum(loss)
 
     def update_f0_iter(self, step):
