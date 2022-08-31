@@ -55,6 +55,9 @@ class Saver(object):
             yaml.dump(dict(args), out_config)
 
 
+    def warmstart_step(self, step):
+        self.global_step = step
+
     def log_info(self, msg):
         '''log method'''
         if isinstance(msg, dict):

@@ -235,16 +235,26 @@ def warmstart_model(args, saver, model):
     max_ckpt_name = ""
     for root, _, files in os.walk(os.path.join(saver.expdir, "ckpts")):
         for name in files:
-            if name.startswith("vocoder_") and name.endswith("params.pt"):
-                if int(os.path.getctime(
-                    os.path.join(saver.expdir, "ckpts", name)
-                    )) >= max_time: max_ckpt_name = name
+            if (name.startswith("vocoder_") and name.endswith("params.pt") and
+            name != "vocoder_best_params.pt"):
+                print(name, os.path.getctime(os.path.join(saver.expdir,
+                    'ckpts', name)))
+                ctime = int(os.path.getctime(os.path.join(saver.expdir,
+                    "ckpts", name)))
+                if ctime >= max_time:
+                    max_time = ctime
+                    max_ckpt_name = name
+
+    max_ckpt_num = 0
                 
     if len(max_ckpt_name) != 0:
         print("Using warmstart checkpoint "+max_ckpt_name)
+        max_ckpt_num = int(re.match('vocoder_(\d+)_\d+\.\d+\_params.pt',
+            max_ckpt_name).group(1))
         utils.load_model_params(os.path.join(saver.expdir, "ckpts",
             max_ckpt_name), model, args.device)
-    return model
+
+    return model, max_ckpt_num
 
 def train(args, model, loss_func, loader_train, loader_test):
     # saver
@@ -259,7 +269,9 @@ def train(args, model, loss_func, loader_train, loader_test):
     optimizer = torch.optim.Adam(model.parameters(), lr=args.train.lr)
 
     # warmstart if available
-    model = warmstart_model(args, saver, model)
+    model, max_ckpt_num = warmstart_model(args, saver, model)
+    saver.warmstart_step(max_ckpt_num)
+    loss_func.update_f0_iter(max_ckpt_num)
 
     # run
     best_loss = np.inf

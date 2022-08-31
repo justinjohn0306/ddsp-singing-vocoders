@@ -21,6 +21,9 @@ class HybridLoss(nn.Module):
 
         return loss, (loss_mss, loss_f0) #, loss_f0_slow)
 
+    def update_f0_iter(self, step):
+        self.f0_loss_func.update_f0_iter(step)
+
 
 class SSSLoss(nn.Module):
     """
@@ -36,6 +39,7 @@ class SSSLoss(nn.Module):
         self.spec = torchaudio.transforms.Spectrogram(n_fft=self.n_fft, hop_length=self.hop_length)
         self.name = name
     def forward(self, x_true, x_pred):
+        # print(x_true.size(), x_pred.size())
         min_len = np.min([x_true.shape[1], x_pred.shape[1]])
         
         # print('--------')
@@ -50,7 +54,7 @@ class SSSLoss(nn.Module):
         # print('x_true:', x_true.shape)
         # print('--------\n\n\n')
 
-        S_true = self.spec(x_true)
+        S_true = self.spec(x_true) # stalls here
         S_pred = self.spec(x_pred)
         linear_term = F.l1_loss(S_pred, S_true)
         log_term = F.l1_loss((S_true + self.eps).log2(), (S_pred + self.eps).log2())
@@ -87,7 +91,10 @@ class MSSLoss(nn.Module):
                 loss_dict = loss(x_true, x_pred)
                 losses += [loss_dict['loss']]
         
-        return self.ratio*sum(losses).sum()
+        # some kind of asynchronous operation on the data is being stalled here,
+        # probably in SSSLoss
+        ret = self.ratio*sum(losses).sum() # 
+        return ret
 
 
 class F0L1Loss(nn.Module):
@@ -98,6 +105,7 @@ class F0L1Loss(nn.Module):
     def __init__(self, name = 'F0L1Loss'):
         super().__init__()
         self.iteration = 0
+
     def forward(self, f0_predict, f0_hz_true):
 
         # print('pitch pred:', f0_predict[0,:])
@@ -116,6 +124,10 @@ class F0L1Loss(nn.Module):
         else:
             loss = F.l1_loss(torch.log(f0_hz_true+1e-3), torch.log(f0_predict+1e-3), reduction='mean')
         return torch.sum(loss)
+
+    def update_f0_iter(self, step):
+        self.iteration = step
+        print("f0.iteration = ",self.iteration)
 
 
 class F0SlowLoss(nn.Module):
