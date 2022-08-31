@@ -227,6 +227,7 @@ def test(args, model, loss_func, loader_test, path_gendir='gen', is_part=False):
     return test_loss, test_loss_mss, test_loss_f0
 
 
+# you OK reatard? i am wood. stupid.
 # initiate off the latest model
 # monotonicity can now be guaranteed
 def warmstart_model(args, saver, model):
@@ -241,7 +242,7 @@ def warmstart_model(args, saver, model):
        for name in files:
             match = re.match('vocoder_(\d+)_\d+\.\d+_(?:best_)?params.pt',
                 name)
-            if int(match.group(1)) > max_ckpt_num
+            if match and (int(match.group(1)) > max_ckpt_num):
                 max_ckpt_num = int(match.group(1))
                 max_ckpt_name = name
     if len(max_ckpt_name) != 0:
@@ -265,7 +266,7 @@ def warmstart_model2(args, saver, model):
     for root, _, files in os.walk(os.path.join(saver.expdir, "ckpts")):
         for name in files:
             match = re.match('vocoder_(\d+)_\d+\.\d+_best_params.pt', name)
-            if int(match.group(1)) > max_ckpt_num:
+            if match and (int(match.group(1)) > max_ckpt_num):
                 max_ckpt_num = int(match.group(1))
                 max_ckpt_name = name
 
