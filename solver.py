@@ -375,7 +375,9 @@ def train(args, model, loss_func, loader_train, loader_test):
                     saver.log_info(' [V] best model updated.')
                     saver.save_models(
                         {'vocoder': model}, postfix='best')
-                    test_loss = best_loss
+                    # That's a pretty big mistake to make
+                    # test_loss = best_loss
+                    best_loss = test_loss
 
                 saver.make_report()
 
