@@ -237,8 +237,6 @@ def warmstart_model(args, saver, model):
         for name in files:
             if (name.startswith("vocoder_") and name.endswith("params.pt") and
             name != "vocoder_best_params.pt"):
-                print(name, os.path.getctime(os.path.join(saver.expdir,
-                    'ckpts', name)))
                 ctime = int(os.path.getctime(os.path.join(saver.expdir,
                     "ckpts", name)))
                 if ctime >= max_time:
