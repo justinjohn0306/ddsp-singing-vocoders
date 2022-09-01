@@ -63,7 +63,8 @@ def get_data_loaders(args, whole_audio=False):
         batch_size=args.train.batch_size if not whole_audio else 1,
         shuffle=False,
         num_workers=8,
-        pin_memory=False
+        pin_memory=False,
+        drop_last=True
     )
     data_valid = AudioDataset(
         args.data.valid_path,
