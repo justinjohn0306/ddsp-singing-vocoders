@@ -27,7 +27,7 @@ train:
   interval_log: 10
   interval_save: 500
   interval_val: 500
-  lr: 0.001
+  lr: 0.002
 debuzz:
   pitch_time_step: 0.005
   pitch_floor: 60
